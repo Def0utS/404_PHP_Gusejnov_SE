@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Арифметическая прогрессия</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #f0f4f8;
+    color: #2d3748;
+    min-height: 100vh;
+    padding: 30px 16px;
+  }
+
+  .container {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  h1 { font-size: 1.8em; margin-bottom: 6px; color: #2c3e50; }
+  h2 { font-size: 1.3em; margin-bottom: 16px; color: #34495e; }
+
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 28px 32px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+  }
+
+  nav {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .btn {
+    padding: 9px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-primary   { background: #4a90e2; color: #fff; }
+  .btn-primary:hover { background: #357abd; }
+  .btn-secondary { background: #e2e8f0; color: #2d3748; }
+  .btn-secondary:hover { background: #cbd5e0; }
+  .btn-success   { background: #48bb78; color: #fff; }
+  .btn-success:hover { background: #38a169; }
+
+  .hidden { display: none !important; }
+
+  .progression {
+    font-size: 1.5em;
+    letter-spacing: 3px;
+    background: #f7fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 20px 0;
+    word-break: break-word;
+  }
+  .progression .gap {
+    color: #e74c3c;
+    font-weight: 700;
+    font-size: 1.1em;
+  }
+
+  .result-box {
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin: 16px 0;
+    font-size: 1.05em;
+    font-weight: 600;
+  }
+  .result-box.win  { background: #f0fff4; border: 2px solid #68d391; color: #276749; }
+  .result-box.lose { background: #fff5f5; border: 2px solid #fc8181; color: #9b2c2c; }
+
+  input[type=text],
+  input[type=number] {
+    padding: 8px 12px;
+    font-size: 1em;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus { border-color: #4a90e2; }
+
+  label { display: block; margin-bottom: 6px; font-weight: 500; }
+
+  .form-group { margin-bottom: 16px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+  }
+  th, td {
+    border: 1px solid #e2e8f0;
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 0.95em;
+  }
+  th { background: #f7fafc; font-weight: 600; }
+  tr:hover td { background: #fafafa; }
+  .badge-win  { color: #276749; font-weight: 700; }
+  .badge-lose { color: #9b2c2c; font-weight: 700; }
+
+  .subtitle { color: #718096; margin-bottom: 20px; }
+
+  #loading { color: #718096; font-style: italic; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎮 Арифметическая прогрессия</h1>
+  <p class="subtitle">Угадайте пропущенное число в прогрессии</p>
+
+  <nav>
+    <button class="btn btn-primary"   onclick="showTab('game')">🎮 Играть</button>
+    <button class="btn btn-secondary" onclick="showTab('history')">📋 История</button>
+  </nav>
+
+  <!-- ═══════════════ ИГРА ═══════════════ -->
+  <div id="tab-game">
+
+    <!-- Ввод имени -->
+    <div id="screen-start" class="card">
+      <h2>Добро пожаловать!</h2>
+      <div class="form-group">
+        <label for="player-name">Ваше имя:</label>
+        <input type="text" id="player-name" placeholder="Введите имя" autofocus>
+      </div>
+      <button class="btn btn-primary" onclick="startGame()">Начать игру →</button>
+    </div>
+
+    <!-- Вопрос -->
+    <div id="screen-play" class="card hidden">
+      <h2>Найдите пропущенное число</h2>
+      <p>Игрок: <strong id="disp-name"></strong></p>
+      <div class="progression" id="disp-progression"></div>
+      <div class="form-group">
+        <label for="player-answer">Ваш ответ:</label>
+        <input type="number" id="player-answer" placeholder="Число">
+      </div>
+      <button class="btn btn-primary" onclick="submitAnswer()">Проверить</button>
+    </div>
+
+    <!-- Результат -->
+    <div id="screen-result" class="card hidden">
+      <h2>Результат</h2>
+      <div id="result-box" class="result-box"></div>
+      <div class="progression" id="disp-full-progression"></div>
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button class="btn btn-primary"   onclick="newRound()">🔄 Ещё раз</button>
+        <button class="btn btn-secondary" onclick="showTab('history'); loadHistory()">📋 История</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════ ИСТОРИЯ ═══════════════ -->
+  <div id="tab-history" class="card hidden">
+    <h2>📋 История игр</h2>
+    <div id="history-content">
+      <p id="loading">Загрузка...</p>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+"use strict";
+
+// ── Состояние ────────────────────────────────────────────────────────────────
+const state = {
+  gameId:     null,
+  prog:       [],
+  hiddenIdx:  null,
+  hiddenNum:  null,
+  playerName: '',
+};
+
+// ── Утилиты ──────────────────────────────────────────────────────────────────
+function showTab(tab) {
+  document.getElementById('tab-game').classList.add('hidden');
+  document.getElementById('tab-history').classList.add('hidden');
+  document.getElementById('tab-' + tab).classList.remove('hidden');
+  if (tab === 'history') loadHistory();
+}
+
+function showScreen(name) {
+  ['start', 'play', 'result'].forEach(s => {
+    document.getElementById('screen-' + s).classList.toggle('hidden', s !== name);
+  });
+}
+
+function generateProgression() {
+  const start = Math.floor(Math.random() * 50) + 1;
+  const step  = Math.floor(Math.random() * 14) + 2;
+  return Array.from({ length: 10 }, (_, i) => start + step * i);
+}
+
+function renderProgression(prog, hiddenIdx) {
+  return prog
+    .map((v, i) => i === hiddenIdx
+      ? '<span class="gap">...</span>'
+      : v)
+    .join(', ');
+}
+
+// ── Логика игры ──────────────────────────────────────────────────────────────
+async function startGame() {
+  const nameInput = document.getElementById('player-name');
+  const name = nameInput.value.trim() || 'Игрок';
+  state.playerName = name;
+
+  const prog      = generateProgression();
+  const hiddenIdx = Math.floor(Math.random() * 10);
+  const hiddenNum = prog[hiddenIdx];
+
+  // POST /games
+  const res  = await fetch('/games', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({
+      player_name:   name,
+      progression:   prog.join(','),
+      hidden_number: hiddenNum,
+    }),
+  });
+  const data = await res.json();
+
+  state.gameId    = data.id;
+  state.prog      = prog;
+  state.hiddenIdx = hiddenIdx;
+  state.hiddenNum = hiddenNum;
+
+  document.getElementById('disp-name').textContent = name;
+  document.getElementById('disp-progression').innerHTML = renderProgression(prog, hiddenIdx);
+  document.getElementById('player-answer').value = '';
+  showScreen('play');
+  document.getElementById('player-answer').focus();
+}
+
+async function submitAnswer() {
+  const answerInput = document.getElementById('player-answer');
+  const answer = parseInt(answerInput.value, 10);
+  if (isNaN(answer)) { answerInput.focus(); return; }
+
+  const correct = answer === state.hiddenNum;
+  const result  = correct ? 'win' : 'lose';
+
+  // POST /step/{id}
+  await fetch('/step/' + state.gameId, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ player_answer: answer, result }),
+  });
+
+  // Показываем результат
+  const box = document.getElementById('result-box');
+  box.className = 'result-box ' + result;
+  if (correct) {
+    box.textContent = '✅ Правильно! Пропущенное число: ' + state.hiddenNum;
+  } else {
+    box.textContent = `❌ Неправильно. Ваш ответ: ${answer}. Правильное число: ${state.hiddenNum}`;
+  }
+
+  document.getElementById('disp-full-progression').textContent = state.prog.join(', ');
+  showScreen('result');
+}
+
+function newRound() {
+  showScreen('play');
+  const prog      = generateProgression();
+  const hiddenIdx = Math.floor(Math.random() * 10);
+  const hiddenNum = prog[hiddenIdx];
+
+  state.prog      = prog;
+  state.hiddenIdx = hiddenIdx;
+  state.hiddenNum = hiddenNum;
+
+  // Создаём новую запись игры
+  fetch('/games', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({
+      player_name:   state.playerName,
+      progression:   prog.join(','),
+      hidden_number: hiddenNum,
+    }),
+  })
+  .then(r => r.json())
+  .then(d => { state.gameId = d.id; });
+
+  document.getElementById('disp-progression').innerHTML = renderProgression(prog, hiddenIdx);
+  document.getElementById('player-answer').value = '';
+  document.getElementById('player-answer').focus();
+}
+
+// ── История ──────────────────────────────────────────────────────────────────
+async function loadHistory() {
+  const content = document.getElementById('history-content');
+  content.innerHTML = '<p id="loading">Загрузка...</p>';
+
+  const res   = await fetch('/games');
+  const games = await res.json();
+
+  if (!Array.isArray(games) || games.length === 0) {
+    content.innerHTML = '<p>Игр ещё не было. <button class="btn btn-primary" onclick="showTab(\'game\')">Сыграть!</button></p>';
+    return;
+  }
+
+  let html = `<p>Всего игр: <strong>${games.length}</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>Игрок</th><th>Дата и время</th>
+        <th>Прогрессия</th><th>Пропущенное</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  for (const g of games) {
+    html += `<tr>
+      <td>${g.id}</td>
+      <td>${esc(g.player_name)}</td>
+      <td>${g.played_at}</td>
+      <td style="font-size:0.85em">${esc(g.progression)}</td>
+      <td>${g.hidden_number}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  content.innerHTML = html;
+}
+
+function esc(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// Инициализация
+showScreen('start');
+</script>
+</body>
+</html>
